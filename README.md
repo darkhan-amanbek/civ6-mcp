@@ -1,5 +1,7 @@
 # civ6-mcp
 
+> **Fork note:** this is [darkhan-amanbek/civ6-mcp](https://github.com/darkhan-amanbek/civ6-mcp), a fork of [lmwilki/civ6-mcp](https://github.com/lmwilki/civ6-mcp). It adds support for the **base game without expansions** (no Rise and Fall / Gathering Storm), the **Barbarian Clans** game mode (`disperse_camp` / `raid_camp`), and city-state war reporting. See [CHANGELOG.md](CHANGELOG.md#120--fork-darkhan-amanbekciv6-mcp).
+
 An MCP server that lets LLM agents play full games of Civilization VI.
 
 Connect any MCP-compatible client — Claude Code, Codex, Gemini CLI, or your own — to a running Civ 6 game. The agent reads game state, moves units, manages cities, conducts diplomacy, and ends turns, all through the game's own rule-enforcing APIs. No cheats, no vision model required.
