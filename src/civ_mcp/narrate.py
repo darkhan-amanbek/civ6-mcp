@@ -1554,7 +1554,7 @@ def narrate_trade_destinations(dests: list[lq.TradeDestination]) -> str:
         return "".join(parts)
 
     if domestic:
-        lines.append("\nDomestic (food + production to destination):")
+        lines.append("\nDomestic (food + production to the ORIGIN city — build the trader in the city you want to grow):")
         for d in domestic:
             lines.append(_fmt_dest(d))
     if foreign:

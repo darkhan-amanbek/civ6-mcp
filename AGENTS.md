@@ -256,7 +256,7 @@ Use `get_district_advisor(city_id, district_type)` for ranked tiles. Then `set_c
 - `get_trade_routes` — see all active routes and idle traders
 - `get_trade_destinations(unit_id)` → available destinations
 - `unit_action(action='trade_route', target_x, target_y)` → start route
-- Domestic routes: food + production to new cities. International: gold.
+- Domestic routes: food + production go to the ORIGIN city (more districts in the destination = more yield). To grow a new city, build or teleport the trader there and route it to a developed city. International: gold to origin.
 - Capacity: 1 from Foreign Trade civic, +1 per Market/Lighthouse
 - Idle routes are free yields going uncollected
 
