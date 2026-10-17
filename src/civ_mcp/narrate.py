@@ -1215,8 +1215,11 @@ def narrate_city_states(status: lq.EnvoyStatus) -> str:
                 if cs.can_send_envoy and status.tokens_available > 0
                 else ""
             )
+            war = (
+                f" !! AT WAR with {', '.join(cs.at_war_with)}" if cs.at_war_with else ""
+            )
             lines.append(
-                f"  {cs.name} ({cs.city_state_type}) — {cs.envoys_sent} envoys{suz}{can} [player {cs.player_id}]"
+                f"  {cs.name} ({cs.city_state_type}) — {cs.envoys_sent} envoys{suz}{can}{war} [player {cs.player_id}]"
             )
     if status.tokens_available > 0:
         lines.append("\nUse send_envoy(player_id) to send an envoy.")
@@ -1554,7 +1557,9 @@ def narrate_trade_destinations(dests: list[lq.TradeDestination]) -> str:
         return "".join(parts)
 
     if domestic:
-        lines.append("\nDomestic (food + production to the ORIGIN city — build the trader in the city you want to grow):")
+        lines.append(
+            "\nDomestic (food + production to the ORIGIN city — build the trader in the city you want to grow):"
+        )
         for d in domestic:
             lines.append(_fmt_dest(d))
     if foreign:

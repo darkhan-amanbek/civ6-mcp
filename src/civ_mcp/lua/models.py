@@ -926,6 +926,9 @@ class CityStateInfo:
     suzerain_id: int  # player ID of suzerain (-1 = none)
     suzerain_name: str  # "None" or civ name
     can_send_envoy: bool
+    at_war_with: list[str] = field(
+        default_factory=list
+    )  # met major civs at war with it
 
 
 @dataclass

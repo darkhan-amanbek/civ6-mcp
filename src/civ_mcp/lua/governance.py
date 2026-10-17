@@ -448,7 +448,18 @@ for i = 0, 62 do
             if sCfg then suzName = Locale.Lookup(sCfg:GetCivilizationShortDescription()) end
         end
         local canSend = pInfluence:CanGiveTokensToPlayer(i) and "1" or "0"
-        print("CS|" .. i .. "|" .. name:gsub("|","/") .. "|" .. csType .. "|" .. envoys .. "|" .. suzID .. "|" .. suzName:gsub("|","/") .. "|" .. canSend)
+        -- Wars this city-state is in with major civs we have met (or us)
+        local wars = {}
+        local csDiplo = Players[i]:GetDiplomacy()
+        for j = 0, 62 do
+            if Players[j] and Players[j]:IsAlive() and Players[j]:IsMajor() and (j == me or pDiplo:HasMet(j)) then
+                local ok, w = pcall(function() return csDiplo:IsAtWarWith(j) end)
+                if ok and w then
+                    table.insert(wars, (Locale.Lookup(PlayerConfigurations[j]:GetCivilizationShortDescription()):gsub("[|,]", "/")))
+                end
+            end
+        end
+        print("CS|" .. i .. "|" .. name:gsub("|","/") .. "|" .. csType .. "|" .. envoys .. "|" .. suzID .. "|" .. suzName:gsub("|","/") .. "|" .. canSend .. "|" .. table.concat(wars, ","))
     end
 end
 print("{SENTINEL}")
@@ -856,6 +867,9 @@ def parse_city_states_response(lines: list[str]) -> EnvoyStatus:
                         suzerain_id=int(parts[5]),
                         suzerain_name=parts[6],
                         can_send_envoy=parts[7] == "1",
+                        at_war_with=[w for w in parts[8].split(",") if w]
+                        if len(parts) > 8
+                        else [],
                     )
                 )
 
