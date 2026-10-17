@@ -1569,7 +1569,7 @@ async def unit_action(
 
     Args:
         unit_id: The unit's composite ID (from get_units output)
-        action: One of: move, attack, fortify, skip, found_city, improve, repair, remove_improvement, remove_feature, build_route, automate, heal, alert, sleep, delete, trade_route, activate, sacrifice_charges, teleport, spread_religion
+        action: One of: move, attack, fortify, skip, found_city, improve, repair, remove_improvement, remove_feature, build_route, automate, heal, alert, sleep, delete, trade_route, activate, sacrifice_charges, teleport, spread_religion, disperse_camp, raid_camp
         target_x: Target X coordinate (required for move/attack/trade_route/teleport)
         target_y: Target Y coordinate (required for move/attack/trade_route/teleport)
         improvement: Improvement type for builders (required for improve), e.g.
@@ -1577,6 +1577,9 @@ async def unit_action(
             IMPROVEMENT_PLANTATION, IMPROVEMENT_CAMP, IMPROVEMENT_PASTURE,
             IMPROVEMENT_FISHING_BOATS, IMPROVEMENT_LUMBER_MILL
 
+    For disperse_camp/raid_camp: Barbarian Clans mode only. The unit must stand on
+    the camp; entering the tile does NOT clear it. disperse_camp destroys the camp,
+    raid_camp loots it for gold and leaves it standing.
     For move/attack: provide target_x and target_y.
     For trade_route: provide target_x and target_y of destination city.
     For teleport: provide target_x and target_y of destination city. Traders only, must be idle (not on active route).
@@ -1638,6 +1641,10 @@ async def unit_action(
                 return await gs.alert_unit(unit_index)
             case "sleep":
                 return await gs.sleep_unit(unit_index)
+            case "disperse_camp":
+                return await gs.treat_with_clan(unit_index, "DISPERSE")
+            case "raid_camp":
+                return await gs.treat_with_clan(unit_index, "RAID")
             case "delete":
                 return await gs.delete_unit(unit_index)
             case "trade_route":
@@ -1655,7 +1662,7 @@ async def unit_action(
                     return "Error: teleport requires target_x and target_y of the destination city"
                 return await gs.teleport_to_city(unit_index, target_x, target_y)
             case _:
-                return f"Error: Unknown action '{action}'. Valid: move, attack, fortify, skip, found_city, improve, repair, remove_improvement, remove_feature, build_route, automate, heal, alert, sleep, delete, trade_route, activate, sacrifice_charges, teleport, spread_religion"
+                return f"Error: Unknown action '{action}'. Valid: move, attack, fortify, skip, found_city, improve, repair, remove_improvement, remove_feature, build_route, automate, heal, alert, sleep, delete, trade_route, activate, sacrifice_charges, teleport, spread_religion, disperse_camp, raid_camp"
 
     result = await _logged(ctx, "unit_action", params, _run)
     if (

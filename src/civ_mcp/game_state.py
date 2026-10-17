@@ -552,6 +552,11 @@ class GameState:
         lines = await self.conn.execute_write(lua)
         return _action_result(lines)
 
+    async def treat_with_clan(self, unit_index: int, mode: str) -> str:
+        lua = lq.build_treat_with_clan(unit_index, mode)
+        lines = await self.conn.execute_write(lua)
+        return _action_result(lines)
+
     async def delete_unit(self, unit_index: int) -> str:
         lua = lq.build_delete_unit(unit_index)
         lines = await self.conn.execute_write(lua)

@@ -293,6 +293,7 @@ from civ_mcp.lua.units import (  # noqa: F401
     build_skip_remaining_units,
     build_skip_unit,
     build_sleep_unit,
+    build_treat_with_clan,
     build_fog_neighbor_query,
     build_threat_scan_query,
     build_unit_position_query,

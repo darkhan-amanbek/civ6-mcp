@@ -936,6 +936,28 @@ print("{SENTINEL}")
 """
 
 
+def build_treat_with_clan(unit_index: int, mode: str) -> str:
+    """Disperse or raid a barbarian clan camp the unit stands on (InGame context).
+
+    Barbarian Clans game mode: walking onto a camp does not clear it — the
+    unit must issue UNITCOMMAND_TREAT_WITH_CLAN_DISPERSE (destroy the camp)
+    or UNITCOMMAND_TREAT_WITH_CLAN_RAID (loot it, camp survives).
+    mode: "DISPERSE" or "RAID".
+    """
+    return f"""
+{_lua_get_unit(unit_index)}
+local row = GameInfo.UnitCommands["UNITCOMMAND_TREAT_WITH_CLAN_{mode}"]
+if row == nil then {_bail("ERR:NO_CLANS_MODE|Barbarian Clans mode is not active in this game")} end
+if not UnitManager.CanStartCommand(unit, row.Hash, true) then
+    {_bail("ERR:CANNOT_TREAT_WITH_CLAN|Unit must be a military unit standing on a barbarian camp")}
+end
+local gold = Players[Game.GetLocalPlayer()]:GetTreasury():GetGoldBalance()
+UnitManager.RequestCommand(unit, row.Hash)
+print("OK:CLAN_{mode}|" .. unit:GetX() .. "," .. unit:GetY() .. "|gold_before:" .. math.floor(gold))
+print("{SENTINEL}")
+"""
+
+
 def build_sleep_unit(unit_index: int) -> str:
     """Put unit to sleep — stays until manually woken (InGame context)."""
     return f"""

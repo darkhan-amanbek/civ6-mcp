@@ -123,6 +123,8 @@ Check rival military strength in `get_diplomacy` periodically. A neighbor at 2x+
 ### Barbarian Camps
 Camps upgrade with the era — an Ancient-era camp spawns Warriors; the same camp in the Medieval era spawns Man-at-Arms. Clearing a camp within a few turns of finding it is almost always easier than fighting the units it produces over many turns.
 
+**Barbarian Clans mode:** stepping onto a camp does NOT clear it, and camps can grow into city-states. With a military unit on the camp tile, call `unit_action(action="disperse_camp")` to destroy it (gold reward) or `raid_camp` to loot it and leave it standing.
+
 ### Religion
 Religious victory is the easiest win condition to miss because it produces no notifications and unfolds slowly. `get_religion_spread` shows the picture. If a rival religion reaches majority in most civs, the window for a response narrows quickly. Religious units bought from a city carry **that city's majority religion** — buy them from cities where your own religion is majority, not a converted city.
 
