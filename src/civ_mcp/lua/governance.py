@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from civ_mcp.lua._helpers import (
+    _require_feature,
+    raise_if_unsupported,
     SENTINEL,
     _LUA_XP_THRESHOLD,
     _bail,
@@ -154,7 +156,9 @@ print("{SENTINEL}")
 
 def build_governors_query() -> str:
     """Read governor status, appointed governors, and available types (InGame context)."""
-    return """
+    return (
+        _require_feature("governors")
+        + """
 local me = Game.GetLocalPlayer()
 local pGovs = Players[me]:GetGovernors()
 local pts = pGovs:GetGovernorPoints()
@@ -216,11 +220,13 @@ for gov in GameInfo.Governors() do
 end
 print("{SENTINEL}")
 """.replace("{SENTINEL}", SENTINEL)
+    )
 
 
 def build_appoint_governor(governor_type: str) -> str:
     """Appoint a new governor (InGame context)."""
     return f"""
+{_require_feature("governors")}
 local me = Game.GetLocalPlayer()
 local pGovs = Players[me]:GetGovernors()
 if not pGovs:CanAppoint() then {_bail("ERR:CANNOT_APPOINT|No governor points available")} end
@@ -245,6 +251,7 @@ print("{SENTINEL}")
 def build_assign_governor(governor_type: str, city_id: int) -> str:
     """Assign a governor to a city (InGame context)."""
     return f"""
+{_require_feature("governors")}
 {_lua_get_city(city_id)}
 local gov = GameInfo.Governors["{governor_type}"]
 if gov == nil then {_bail(f"ERR:GOVERNOR_NOT_FOUND|{governor_type}")} end
@@ -267,6 +274,7 @@ def build_promote_governor(governor_type: str, promotion_type: str) -> str:
     Source: GovernorDetailsPanel.lua — SetVoid1(m_GovernorIndex), SetVoid2(kPromotion.Index)
     """
     return f"""
+{_require_feature("governors")}
 local me = Game.GetLocalPlayer()
 local pGovs = Players[me]:GetGovernors()
 local gov = GameInfo.Governors["{governor_type}"]
@@ -547,7 +555,9 @@ print("{SENTINEL}")
 
 def build_dedications_query() -> str:
     """Read current era age, available dedications, and active ones."""
-    return """
+    return (
+        _require_feature("eras")
+        + """
 local me = Game.GetLocalPlayer()
 local pEras = Game.GetEras()
 local age = "Normal"
@@ -583,11 +593,13 @@ if choices then
 end
 print("{SENTINEL}")
 """.replace("{SENTINEL}", SENTINEL)
+    )
 
 
 def build_choose_dedication(dedication_index: int) -> str:
     """Select a dedication/commemoration by its index."""
     return f"""
+{_require_feature("eras")}
 local me = Game.GetLocalPlayer()
 local pEras = Game.GetEras()
 local allowed = pEras:GetPlayerNumAllowedCommemorations(me)
@@ -699,6 +711,7 @@ def parse_policies_response(lines: list[str]) -> GovernmentStatus:
 
 def parse_governors_response(lines: list[str]) -> GovernorStatus:
     """Parse STATUS|, APPOINTED|, GOV_PROMO|, AVAILABLE| lines from build_governors_query."""
+    raise_if_unsupported(lines)
     pts_avail = 0
     pts_spent = 0
     can_appoint = False
@@ -851,6 +864,7 @@ def parse_city_states_response(lines: list[str]) -> EnvoyStatus:
 
 def parse_dedications_response(lines: list[str]) -> DedicationStatus:
     """Parse STATUS|, ACTIVE|, and CHOICE| lines from build_dedications_query."""
+    raise_if_unsupported(lines)
     age_type = "Normal"
     era = 0
     era_score = 0

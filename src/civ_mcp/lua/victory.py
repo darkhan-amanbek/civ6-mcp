@@ -88,6 +88,11 @@ local pDiplo = Players[me]:GetDiplomacy()
 local pCul = Players[me]:GetCulture()
 
 local dPop, dMil, dFood, dGold, dLand, dProd = {{}}, {{}}, {{}}, {{}}, {{}}, {{}}
+-- Base game has no victory-point API; fall back to the number of launch projects
+local nLaunch = 0
+for row in GameInfo.Projects() do
+    if row.PrereqDistrict == "DISTRICT_SPACEPORT" and row.ProjectType:find("^PROJECT_LAUNCH_") then nLaunch = nLaunch + 1 end
+end
 for i = 0, 62 do
     local p = Players[i]
     if p and p:IsMajor() and p:IsAlive() then
@@ -96,9 +101,12 @@ for i = 0, 62 do
             local cfg = PlayerConfigurations[i]
             local name = Locale.Lookup(cfg:GetCivilizationShortDescription())
             local st = p:GetStats()
-            local sciVP = st:GetScienceVictoryPoints()
-            local sciNeeded = st:GetScienceVictoryPointsTotalNeeded()
-            local diploVP = st:GetDiplomaticVictoryPoints()
+            -- Victory points are Gathering Storm APIs; the base game has
+            -- 3 space projects and no diplomatic victory
+            local sciVP, sciNeeded, diploVP = 0, nLaunch, 0
+            pcall(function() sciVP = st:GetScienceVictoryPoints() end)
+            pcall(function() sciNeeded = st:GetScienceVictoryPointsTotalNeeded() end)
+            pcall(function() diploVP = st:GetDiplomaticVictoryPoints() end)
             local tourism = st:GetTourism()
             local milStr = st:GetMilitaryStrength()
             local techs = st:GetNumTechsResearched()
@@ -124,25 +132,17 @@ for i = 0, 62 do
             print("SPACE|" .. name .. "|" .. spaceports .. "|" .. sciVP .. "/" .. sciNeeded)
             if i == me then
                 -- Space project chain detail (our player only)
+                -- Space projects differ by ruleset (base: 5 launches, GS: 4 incl.
+                -- Exoplanet Expedition), so read the chain from the database
                 local spaceChain = {{}}
-                if GameInfo.Projects["PROJECT_LAUNCH_MARS_HABITAT"] then
-                    spaceChain = {{
-                        {{"PROJECT_LAUNCH_EARTH_SATELLITE", "TECH_ROCKETRY"}},
-                        {{"PROJECT_LAUNCH_MOON_LANDING", "TECH_SATELLITES"}},
-                        {{"PROJECT_LAUNCH_MARS_HABITAT", "TECH_NUCLEAR_FUSION"}},
-                        {{"PROJECT_LAUNCH_MARS_HYDROPONICS", "TECH_NUCLEAR_FUSION"}},
-                        {{"PROJECT_LAUNCH_MARS_REACTOR", "TECH_NUCLEAR_FUSION"}},
-                    }}
-                else
-                    spaceChain = {{
-                        {{"PROJECT_LAUNCH_EARTH_SATELLITE", "TECH_ROCKETRY"}},
-                        {{"PROJECT_LAUNCH_MOON_LANDING", "TECH_SATELLITES"}},
-                        {{"PROJECT_LAUNCH_MARS_COLONY", "TECH_NUCLEAR_FUSION"}},
-                    }}
+                for row in GameInfo.Projects() do
+                    if row.PrereqDistrict == "DISTRICT_SPACEPORT" and row.PrereqTech
+                        and row.ProjectType:find("^PROJECT_LAUNCH_") then
+                        local tRow = GameInfo.Technologies[row.PrereqTech]
+                        table.insert(spaceChain, {{row.ProjectType, row.PrereqTech, tRow and tRow.Cost or 0}})
+                    end
                 end
-                if GameInfo.Projects["PROJECT_LAUNCH_EXOPLANET_EXPEDITION"] then
-                    table.insert(spaceChain, {{"PROJECT_LAUNCH_EXOPLANET_EXPEDITION", "TECH_OFFWORLD_MISSION"}})
-                end
+                table.sort(spaceChain, function(a, b) return a[3] < b[3] end)
                 local pTechs = p:GetTechs()
                 local completedCount = 0
                 for _, sp in ipairs(spaceChain) do

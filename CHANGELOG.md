@@ -4,6 +4,7 @@
 
 The focus shifted from running games to packaging the results. The dataset publisher pipeline exports all telemetry to HuggingFace with Croissant 1.1 metadata for the NeurIPS Evaluations & Datasets track submission. Several reliability features landed in parallel from ongoing eval runs across the fleet.
 
+- **Base game compatibility**: Tools no longer crash in games without Rise and Fall / Gathering Storm. Expansion-only APIs (favor, era score, governors, loyalty, grievances, alliances, resource stockpiles, victory points, World Congress) are feature-detected; gated tools (`get_governors`, `get_dedications`, `get_world_congress`, `form_alliance`, governor/dedication/WC actions) return a clear "requires expansion" error. The science-victory chain is read from `GameInfo.Projects`, so the base game's 5 launch projects show correctly.
 - **HuggingFace dataset publisher**: End-to-end pipeline (`scripts/publish_hf/`) for staging, exporting parquet tables, generating Croissant 1.1 metadata, validating, and uploading to HuggingFace.
 - **NeurIPS anonymization**: RAI metadata fields, identity redaction in parquet exports, anonymous HF account.
 - **Game-over watchdog**: Detect victories even when the LLM stops calling tools — polls game state on a background timer.

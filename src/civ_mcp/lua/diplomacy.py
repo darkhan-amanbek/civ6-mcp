@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from civ_mcp.lua._helpers import SENTINEL, _bail, _bail_lua, _lua_close_diplo_session
+from civ_mcp.lua._helpers import (
+    SENTINEL,
+    _bail,
+    _bail_lua,
+    _lua_close_diplo_session,
+    _require_feature,
+)
 from civ_mcp.lua.models import (
     AgendaInfo,
     CivInfo,
@@ -37,7 +43,8 @@ for i = 0, 62 do
             local ai = Players[i]:GetDiplomaticAI()
             local stateIdx = ai:GetDiplomaticStateIndex(me)
             local stateName = states[stateIdx + 1] or tostring(stateIdx)
-            local grievances = pDiplo:GetGrievancesAgainst(i)
+            local grievances = 0  -- grievances are Gathering Storm only
+            pcall(function() grievances = pDiplo:GetGrievancesAgainst(i) end)
             local vis = pDiplo:GetVisibilityOn(i)
             local hasDel = pDiplo:HasDelegationAt(i) and "1" or "0"
             local hasEmb = pDiplo:HasEmbassyAt(i) and "1" or "0"
@@ -55,7 +62,7 @@ for i = 0, 62 do
                     local ecName = Locale.Lookup(ec:GetName())
                     local ecPop = ec:GetPopulation()
                     local ecLoy, ecLoyPT = 100, 0
-                    local ecCult = ec:GetCulturalIdentity()
+                    local ecCult = ec.GetCulturalIdentity and ec:GetCulturalIdentity()
                     if ecCult then ecLoy = ecCult:GetLoyalty(); ecLoyPT = ecCult:GetLoyaltyPerTurn() end
                     local ecWalls, ecDef = 0, 0
                     pcall(function()
@@ -972,6 +979,7 @@ def build_form_alliance(other_player_id: int, alliance_type: str) -> str:
     """
     alliance_key = f"ALLIANCE_{alliance_type.upper()}"
     return f"""
+{_require_feature("alliances")}
 local me = Game.GetLocalPlayer()
 local target = {other_player_id}
 local allianceRow = GameInfo.Alliances["{alliance_key}"]

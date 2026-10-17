@@ -13,6 +13,10 @@ An MCP server connecting to a live Civilization VI game via FireTuner. You can r
 - X increases → east. X decreases → west.
 - Moving from (9,24) to (9,26) is **south**, not north.
 
+## Ruleset
+
+`get_game_overview` hides Favor and era score when the game has no expansions. In the base game there are no governors, loyalty, era score/dedications, alliances, grievances, strategic stockpiles (resources are just copies owned), diplomatic victory, or World Congress — those tools return a "requires expansion" error. Science victory is all 5 launch projects instead of 50 VP.
+
 ## Game Start
 
 Before your first turn:

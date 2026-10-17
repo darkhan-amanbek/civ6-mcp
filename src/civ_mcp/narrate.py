@@ -28,7 +28,12 @@ def narrate_overview(ov: lq.GameOverview) -> str:
                 if ov.gold_income > 0 or ov.total_maintenance > 0
                 else ""
             )
-            + f" | Science: {ov.science_yield:.1f} | Culture: {ov.culture_yield:.1f} | Faith: {ov.faith:.0f} | Favor: {ov.diplomatic_favor} ({ov.favor_per_turn:+d}/turn)",
+            + f" | Science: {ov.science_yield:.1f} | Culture: {ov.culture_yield:.1f} | Faith: {ov.faith:.0f}"
+            + (
+                f" | Favor: {ov.diplomatic_favor} ({ov.favor_per_turn:+d}/turn)"
+                if ov.has_favor
+                else ""
+            ),
             f"Research: {ov.current_research} | Civic: {ov.current_civic}",
             f"Cities: {ov.num_cities} | Population: {ov.total_population} | Units: {ov.num_units}"
             + (
@@ -87,7 +92,9 @@ def narrate_overview(ov: lq.GameOverview) -> str:
             f"Victory: {', '.join(enabled)} only"
             + (f" (disabled: {', '.join(disabled)})" if disabled else "")
         )
-    if ov.era_name:
+    if ov.era_name and not ov.has_era_score:
+        lines.append(f"Era: {ov.era_name}")
+    elif ov.era_name:
         score_status = ""
         if ov.era_score >= ov.era_golden_threshold:
             score_status = " -> GOLDEN AGE"
@@ -655,6 +662,10 @@ def narrate_empire_resources(
     if visible_strats:
         lines.append("\nStrategic Stockpiles:")
         for s in visible_strats:
+            if s.cap <= 0:
+                # Base game: no stockpiles, just the number of copies owned
+                lines.append(f"  {s.name}: {s.amount}")
+                continue
             net = s.per_turn - s.demand
             net_str = f"+{net}" if net >= 0 else str(net)
             parts = [f"  {s.name}: {s.amount}/{s.cap} ({net_str}/turn)"]
@@ -1700,7 +1711,13 @@ def narrate_victory_progress(vp: lq.VictoryProgress) -> str:
 
     # --- Science Victory ---
     if all_enabled or "VICTORY_TECHNOLOGY" in ev:
-        lines.append("SCIENCE VICTORY (launch 4 space projects = 50 VP)")
+        if vp.space_projects and us and us.science_vp_needed == len(vp.space_projects):
+            # Base game: no VP system, "needed" falls back to the launch-project count
+            lines.append(
+                f"SCIENCE VICTORY (complete all {len(vp.space_projects)} space launch projects)"
+            )
+        else:
+            lines.append("SCIENCE VICTORY (launch 4 space projects = 50 VP)")
         sci_sorted = sorted(
             vp.players, key=lambda p: (p.science_vp, p.techs_researched), reverse=True
         )

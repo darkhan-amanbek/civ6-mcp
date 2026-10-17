@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from civ_mcp.lua._helpers import SENTINEL, _bail
+from civ_mcp.lua._helpers import SENTINEL, _bail, _require_feature, raise_if_unsupported
 from civ_mcp.lua.models import CongressProposal, CongressResolution, WorldCongressStatus
 
 
 def build_world_congress_query() -> str:
     """Get World Congress status, resolutions, and proposals (InGame context)."""
     return f"""
+{_require_feature("world_congress")}
 local me = Game.GetLocalPlayer()
 local pDiplo = Players[me]:GetDiplomacy()
 local wc = Game.GetWorldCongress()
@@ -112,6 +113,7 @@ print("{SENTINEL}")
 
 def parse_world_congress_response(lines: list[str]) -> WorldCongressStatus:
     """Parse WC_STATUS / WC_RES / WC_PROP lines into WorldCongressStatus."""
+    raise_if_unsupported(lines)
     status = WorldCongressStatus(
         is_in_session=False,
         turns_until_next=-1,
@@ -172,6 +174,7 @@ def build_congress_vote(
     num_votes: total votes to commit (A.votes + B.votes = this value, allocated to chosen option)
     """
     return f"""
+{_require_feature("world_congress")}
 local me = Game.GetLocalPlayer()
 local kParams = {{}}
 kParams[PlayerOperations.PARAM_RESOLUTION_TYPE] = {resolution_hash}
@@ -190,7 +193,9 @@ def build_congress_submit() -> str:
     Mirrors WorldCongressPopup.lua OnAccept(): submit votes then ACTION_ENDTURN
     to resume turn-segment processing after the WC stage.
     """
-    return """
+    return (
+        _require_feature("world_congress")
+        + """
 local me = Game.GetLocalPlayer()
 local intro = ContextPtr:LookUpControl("/InGame/WorldCongressIntro")
 if intro then intro:SetHide(true) end
@@ -201,6 +206,7 @@ UI.RequestAction(ActionTypes.ACTION_ENDTURN)
 print("OK:CONGRESS_SUBMITTED")
 print("{SENTINEL}")
 """.replace("{SENTINEL}", SENTINEL)
+    )
 
 
 def build_register_wc_voter(votes: list[dict] | None = None) -> str:
@@ -234,6 +240,7 @@ def build_register_wc_voter(votes: list[dict] | None = None) -> str:
         prefs_lua = "nil"
 
     return f"""
+{_require_feature("world_congress")}
 -- Clean up any stale handler
 if __civmcp_wc_handler then
     pcall(function() Events.WorldCongressStage1.Remove(__civmcp_wc_handler) end)

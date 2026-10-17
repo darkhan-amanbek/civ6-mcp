@@ -197,6 +197,10 @@ class GameOverview:
     speed_cost_multiplier: int = 100  # 67 for Quick, 100 for Standard, etc.
     # Victory conditions (empty = all enabled)
     enabled_victories: set[str] = field(default_factory=set)
+    # Expansion features (False in the base game: favor is Gathering Storm,
+    # era score / dark & golden ages are Rise and Fall)
+    has_favor: bool = True
+    has_era_score: bool = True
 
 
 @dataclass

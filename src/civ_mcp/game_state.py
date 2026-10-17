@@ -1731,6 +1731,8 @@ def _action_result(lines: list[str]) -> str:
     for line in lines:
         if line.startswith("OK:"):
             return line[3:]
+        if line.startswith(lq.UNSUPPORTED_PREFIX):
+            return f"Error: {line[len(lq.UNSUPPORTED_PREFIX) :]}"
         if line.startswith("ERR:"):
             return f"Error: {line[4:]}"
     # No OK/ERR found — return all lines for debugging

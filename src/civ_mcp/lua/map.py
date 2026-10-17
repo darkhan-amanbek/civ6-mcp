@@ -496,10 +496,14 @@ for row in GameInfo.Resources() do
         local cls = classMap[row.ResourceClassType]
         if cls == "strategic" then
             local amt = pRes:GetResourceAmount(row.Index)
-            local cap = pRes:GetResourceStockpileCap(row.Index)
-            local accum = pRes:GetResourceAccumulationPerTurn(row.Index)
-            local demand = pRes:GetUnitResourceDemandPerTurn(row.Index)
-            local imported = pRes:GetResourceImportPerTurn(row.Index)
+            -- Stockpiles are Gathering Storm; base game reports copies only (cap 0)
+            local cap, accum, demand, imported = 0, 0, 0, 0
+            if pRes.GetResourceStockpileCap then
+                cap = pRes:GetResourceStockpileCap(row.Index)
+                accum = pRes:GetResourceAccumulationPerTurn(row.Index)
+                demand = pRes:GetUnitResourceDemandPerTurn(row.Index)
+                imported = pRes:GetResourceImportPerTurn(row.Index)
+            end
             local rName = row.ResourceType:gsub("RESOURCE_", "")
             print("STOCKPILE|" .. rName .. "|" .. amt .. "|" .. cap .. "|" .. accum .. "|" .. demand .. "|" .. imported)
         elseif cls == "luxury" then
@@ -982,10 +986,14 @@ local pRes = Players[me]:GetResources()
 for row in GameInfo.Resources() do
     if row.ResourceClassType == "RESOURCECLASS_STRATEGIC" and pRes:IsResourceVisible(row.Index) then
         local amt = pRes:GetResourceAmount(row.Index)
-        local cap = pRes:GetResourceStockpileCap(row.Index)
-        local accum = pRes:GetResourceAccumulationPerTurn(row.Index)
-        local demand = pRes:GetUnitResourceDemandPerTurn(row.Index)
-        local imported = pRes:GetResourceImportPerTurn(row.Index)
+        -- Stockpiles are Gathering Storm; base game reports copies only (cap 0)
+        local cap, accum, demand, imported = 0, 0, 0, 0
+        if pRes.GetResourceStockpileCap then
+            cap = pRes:GetResourceStockpileCap(row.Index)
+            accum = pRes:GetResourceAccumulationPerTurn(row.Index)
+            demand = pRes:GetUnitResourceDemandPerTurn(row.Index)
+            imported = pRes:GetResourceImportPerTurn(row.Index)
+        end
         local rName = row.ResourceType:gsub("RESOURCE_", "")
         print("STOCKPILE|" .. rName .. "|" .. amt .. "|" .. cap .. "|" .. accum .. "|" .. demand .. "|" .. imported)
     end

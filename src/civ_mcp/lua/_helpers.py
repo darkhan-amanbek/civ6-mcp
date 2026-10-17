@@ -30,6 +30,46 @@ def _bail(msg: str) -> str:
     return f'print("{msg}"); print("{SENTINEL}"); return'
 
 
+# Features missing from the base game, keyed by short name:
+# (Lua expression that is truthy when the feature exists, human-readable requirement)
+EXPANSION_FEATURES: dict[str, tuple[str, str]] = {
+    "governors": (
+        "Players[Game.GetLocalPlayer()].GetGovernors",
+        "Governors require the Rise and Fall or Gathering Storm expansion",
+    ),
+    "eras": (
+        "Game.GetEras",
+        "Era score and dedications require the Rise and Fall or Gathering Storm expansion",
+    ),
+    "world_congress": (
+        "Game.GetWorldCongress",
+        "World Congress requires the Gathering Storm expansion",
+    ),
+    "alliances": (
+        "Players[Game.GetLocalPlayer()]:GetDiplomacy().GetAllianceType",
+        "Alliances require the Rise and Fall or Gathering Storm expansion",
+    ),
+}
+
+UNSUPPORTED_PREFIX = "ERR:UNSUPPORTED|"
+
+
+def _require_feature(feature: str) -> str:
+    """Lua guard that bails with ERR:UNSUPPORTED|<reason> when an expansion feature is absent.
+
+    Put it at the top of a builder's Lua body (after nothing that can fail).
+    """
+    expr, reason = EXPANSION_FEATURES[feature]
+    return f"if not ({expr}) then {_bail(UNSUPPORTED_PREFIX + reason)} end"
+
+
+def raise_if_unsupported(lines: list[str]) -> None:
+    """Raise ValueError when a read query bailed via _require_feature."""
+    for line in lines:
+        if line.startswith(UNSUPPORTED_PREFIX):
+            raise ValueError(line[len(UNSUPPORTED_PREFIX) :])
+
+
 def _bail_lua(lua_expr: str) -> str:
     """Like _bail but the argument is a raw Lua expression (for string concatenation).
 

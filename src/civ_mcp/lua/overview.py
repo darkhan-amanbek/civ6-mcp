@@ -45,9 +45,13 @@ for i, u in p:GetUnits():Members() do
     end
 end
 local myScore = p:GetScore()
-local favor = p:GetFavor()
+-- Base game / Rise & Fall have no diplomatic favor (Gathering Storm only)
+local hasFavor = p.GetFavor ~= nil
+local hasEras = Game.GetEras ~= nil
+local favor = hasFavor and p:GetFavor() or 0
 local favorPerTurn = 0
 local pDiplo = p:GetDiplomacy()
+if hasFavor then
 -- 1. Government tier bonus (govRow.Tier is a string like "GOVERNMENT_TIER_1")
 local govIdx = cu:GetCurrentGovernment()
 if govIdx >= 0 then
@@ -83,7 +87,9 @@ for i = 0, 62 do
         end
     end
 end
+end
 print(Game.GetCurrentGameTurn() .. "|" .. id .. "|" .. Locale.Lookup(cfg:GetCivilizationShortDescription()):gsub("|", "/") .. "|" .. Locale.Lookup(cfg:GetLeaderName()):gsub("|", "/") .. "|" .. string.format("%.1f", tr:GetGoldBalance()) .. "|" .. string.format("%.1f", tr:GetGoldYield() - tr:GetTotalMaintenance()) .. "|" .. string.format("%.1f", te:GetScienceYield()) .. "|" .. string.format("%.1f", cu:GetCultureYield()) .. "|" .. string.format("%.1f", re:GetFaithBalance()) .. "|" .. techName .. "|" .. civicName .. "|" .. nCities .. "|" .. nUnits .. "|" .. myScore .. "|" .. favor .. "|" .. favorPerTurn .. "|" .. totalPop .. "|" .. string.format("%.1f", tr:GetGoldYield()) .. "|" .. string.format("%.1f", tr:GetTotalMaintenance()))
+print("FEATURES|" .. (hasFavor and 1 or 0) .. "|" .. (hasEras and 1 or 0))
 for i = 0, 62 do
     if i ~= id and Players[i] and Players[i]:IsAlive() and Players[i]:IsMajor() and pDiplo:HasMet(i) then
         local oCfg = PlayerConfigurations[i]
@@ -122,14 +128,20 @@ for i = 0, 62 do
 end
 local maxRel = math.floor(nMajors / 2) + 1
 print("RELSLOTS|" .. nReligions .. "|" .. maxRel)
-local eraManager = Game.GetEras()
-local eraIdx = eraManager:GetCurrentEra()
-local eraEntry = GameInfo.Eras[eraIdx]
-local eraName = eraEntry and Locale.Lookup(eraEntry.Name) or "Unknown"
-local eraScore = eraManager:GetPlayerCurrentScore(id)
-local darkThresh = eraManager:GetPlayerDarkAgeThreshold(id)
-local goldenThresh = eraManager:GetPlayerGoldenAgeThreshold(id)
-print("ERA|" .. eraName .. "|" .. eraScore .. "|" .. darkThresh .. "|" .. goldenThresh)
+if hasEras then
+    local eraManager = Game.GetEras()
+    local eraIdx = eraManager:GetCurrentEra()
+    local eraEntry = GameInfo.Eras[eraIdx]
+    local eraName = eraEntry and Locale.Lookup(eraEntry.Name) or "Unknown"
+    local eraScore = eraManager:GetPlayerCurrentScore(id)
+    local darkThresh = eraManager:GetPlayerDarkAgeThreshold(id)
+    local goldenThresh = eraManager:GetPlayerGoldenAgeThreshold(id)
+    print("ERA|" .. eraName .. "|" .. eraScore .. "|" .. darkThresh .. "|" .. goldenThresh)
+else
+    -- Base game: per-player era, no era score / dark & golden ages
+    local eraEntry = GameInfo.Eras[p:GetEra()]
+    print("ERA|" .. (eraEntry and Locale.Lookup(eraEntry.Name) or "Unknown"))
+end
 local maxTurns = GameConfiguration.GetValue("GAME_MAX_TURNS") or 0
 print("MAXTURNS|" .. maxTurns)
 local diffName = "Unknown"
@@ -509,9 +521,16 @@ def parse_overview_response(lines: list[str]) -> GameOverview:
     game_speed_name = ""
     speed_cost_multiplier = 100
     enabled_victories: set[str] = set()
+    has_favor = True
+    has_era_score = True
     player_id_parsed = int(parts[1])
     for line in lines[1:]:
-        if line.startswith("RANK|"):
+        if line.startswith("FEATURES|"):
+            fp = line.split("|")
+            if len(fp) >= 3:
+                has_favor = fp[1] == "1"
+                has_era_score = fp[2] == "1"
+        elif line.startswith("RANK|"):
             rp = line.split("|")
             if len(rp) >= 4:
                 rankings.append(
@@ -544,7 +563,9 @@ def parse_overview_response(lines: list[str]) -> GameOverview:
                 religions_max = int(rp[2])
         elif line.startswith("ERA|"):
             ep = line.split("|")
-            if len(ep) >= 5:
+            if len(ep) == 2:
+                era_name = ep[1]
+            elif len(ep) >= 5:
                 era_name = ep[1]
                 era_score = int(ep[2])
                 era_dark_threshold = int(ep[3])
@@ -620,6 +641,8 @@ def parse_overview_response(lines: list[str]) -> GameOverview:
         game_speed_name=game_speed_name,
         speed_cost_multiplier=speed_cost_multiplier,
         enabled_victories=enabled_victories,
+        has_favor=has_favor,
+        has_era_score=has_era_score,
     )
 
 
@@ -648,8 +671,9 @@ def build_rival_snapshot_query() -> str:
         "    local mil = st:GetMilitaryStrength() "
         "    local techs = st:GetNumTechsResearched() "
         "    local civics = st:GetNumCivicsCompleted() "
-        "    local sciVP = st:GetScienceVictoryPoints() "
-        "    local diploVP = st:GetDiplomaticVictoryPoints() "
+        "    local sciVP, diploVP = 0, 0 "
+        "    pcall(function() sciVP = st:GetScienceVictoryPoints() end) "
+        "    pcall(function() diploVP = st:GetDiplomaticVictoryPoints() end) "
         "    local faith = 0 "
         "    pcall(function() faith = p:GetReligion():GetFaithBalance() end) "
         '    local resStr = "" '
@@ -750,8 +774,8 @@ def build_diary_full_query() -> str:
     return (
         # --- Setup ---
         "local me = Game.GetLocalPlayer() "
-        "local eraManager = Game.GetEras() "
-        "local eraIdx = eraManager:GetCurrentEra() "
+        "local eraManager = Game.GetEras and Game.GetEras() "
+        "local eraIdx = eraManager and eraManager:GetCurrentEra() or Players[me]:GetEra() "
         "local eraEntry = GameInfo.Eras[eraIdx] "
         'local eraType = eraEntry and eraEntry.EraType or "UNKNOWN" '
         # Pre-compute territory, improvement, and exploration counts per player
@@ -824,8 +848,9 @@ def build_diary_full_query() -> str:
         "  local mil = st:GetMilitaryStrength() "
         "  local techsN = st:GetNumTechsResearched() "
         "  local civicsN = st:GetNumCivicsCompleted() "
-        "  local sciVP = st:GetScienceVictoryPoints() "
-        "  local diploVP = st:GetDiplomaticVictoryPoints() "
+        "  local sciVP, diploVP = 0, 0 "
+        "  pcall(function() sciVP = st:GetScienceVictoryPoints() end) "
+        "  pcall(function() diploVP = st:GetDiplomaticVictoryPoints() end) "
         "  local tourism = st:GetTourism() "
         "  local relCities = st:GetNumCitiesFollowingReligion() "
         "  local stay = 0 "
@@ -1186,7 +1211,7 @@ def build_diary_full_query() -> str:
         "end "
         'print("ACS|" .. suzCount .. "|" .. envoysAvail .. "|" .. envoyStr) '
         # Governors
-        "local pGovs = Players[me]:GetGovernors() "
+        "local pGovs = Players[me].GetGovernors and Players[me]:GetGovernors() "
         "if pGovs then "
         "  for gRow in GameInfo.Governors() do "
         "    local ok, hasGov = pcall(function() "

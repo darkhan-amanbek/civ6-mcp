@@ -17,7 +17,7 @@ works identically to the old monolithic ``lua_queries`` module.
 """
 
 # Re-export helpers & sentinel
-from civ_mcp.lua._helpers import SENTINEL  # noqa: F401
+from civ_mcp.lua._helpers import SENTINEL, UNSUPPORTED_PREFIX, raise_if_unsupported  # noqa: F401
 from civ_mcp.lua.espionage import (  # noqa: F401
     build_get_spies_query,
     build_spy_escape_route,

@@ -223,7 +223,7 @@ The repo includes an [AGENTS.md](AGENTS.md) playbook (symlinked as `CLAUDE.md` f
 
 ## Requirements
 
-- **macOS, Windows, or Linux** with Civilization VI (Steam version, Gathering Storm DLC)
+- **macOS, Windows, or Linux** with Civilization VI (Steam version; Gathering Storm recommended — the base game works, but expansion-only tools such as governors, era score, and World Congress report that they are unavailable)
 - **Python 3.12+** with [uv](https://docs.astral.sh/uv/)
 - An **MCP client** (Claude Code, Codex, Gemini CLI, or any MCP-compatible client)
 
